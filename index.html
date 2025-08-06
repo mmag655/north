@@ -31,65 +31,388 @@
   <p style="font-size:15px;color:#444;">Your clarity journey starts here.</p>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<div id="northPayWrapper" style="font-family:'Segoe UI',sans-serif;max-width:700px;margin:40px auto;padding:32px;background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.06);text-align:center;">
+  <h2 style="font-size:24px;color:#004B82;">🔐 Connect to Start</h2>
+  <p>Connect your wallet on Polygon to unlock North. Pay <b>70 ZVIO</b> to access.</p>
+  <button id="connectBtn" style="background-color:#00CFFF;color:white;border:none;padding:12px 24px;font-size:16px;border-radius:8px;cursor:pointer;">🔗 Connect Wallet</button>
+  <p id="walletDisplay" style="margin-top:16px;font-size:14px;color:#555;"></p>
+  <button id="payBtn" style="display:none;background:#059669;color:#fff;padding:12px 28px;font-size:16px;border:none;border-radius:8px;cursor:pointer;margin-top:18px;">Pay 70 ZVIO to Unlock</button>
+  <p id="payStatus" style="margin-top:15px;color:#be123c;"></p>
+</div>
+<div id="northDashboard" style="display:none; font-family:'Segoe UI',sans-serif;max-width:720px;margin:40px auto;padding:32px;background:#f9f9f9;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.06);text-align:center;">
+  <h2 style="font-size:24px;color:#1E1E1E;">🎯 Welcome to North</h2>
+  <p style="font-size:15px;color:#444;">Your clarity journey starts here.</p>
+</div>
 <script>
-  // ZVIO ERC20 contract on Polygon (18 decimals)
-  const ZVIO_CONTRACT = "0x9778f41D030702404677013fa7444C5872244621";
-  const ZVIO_ABI = [
-    "function balanceOf(address owner) view returns (uint256)",
-    "function decimals() view returns (uint8)"
-  ];
-  const REQUIRED_ZVIO = 100; // minimum required
+const ZVIO_CONTRACT = "0x9778f41D030702404677013fa7444C5872244621";
+const ZVIO_ABI = [
+  "function balanceOf(address owner) view returns (uint256)",
+  "function decimals() view returns (uint8)",
+  "function transfer(address to, uint256 amount) public returns (bool)"
+];
+const REQUIRED_ZVIO = 70; // Payment required
+const RECEIVER = "0x679EA8710b0a02feD125e468c1C7321117FE3bad"; // Your address
 
-  let provider, signer, userAddress;
+let provider, signer, userAddress, zvio, decimals;
 
-  document.addEventListener("DOMContentLoaded", function () {
-    const connectBtn = document.getElementById("connectBtn");
-    const walletDisplay = document.getElementById("walletDisplay");
-    const unlockStatus = document.getElementById("unlockStatus");
+document.addEventListener("DOMContentLoaded", function () {
+  const connectBtn = document.getElementById("connectBtn");
+  const walletDisplay = document.getElementById("walletDisplay");
+  const payBtn = document.getElementById("payBtn");
+  const payStatus = document.getElementById("payStatus");
 
-    connectBtn.addEventListener("click", async function () {
-      if (!window.ethereum) {
-        alert("MetaMask is not installed. Please use a browser with MetaMask.");
-        return;
+  connectBtn.addEventListener("click", async function () {
+    if (!window.ethereum) {
+      alert("MetaMask is not installed. Please use a browser with MetaMask.");
+      return;
+    }
+    try {
+      provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+      await provider.send("wallet_switchEthereumChain", [{ chainId: "0x89" }]); // Polygon Mainnet
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      userAddress = await signer.getAddress();
+
+      walletDisplay.innerText = "🔗 Connected: " + userAddress;
+      zvio = new ethers.Contract(ZVIO_CONTRACT, ZVIO_ABI, provider);
+      decimals = await zvio.decimals ? await zvio.decimals() : 18;
+      const balance = await zvio.balanceOf(userAddress);
+      const zBalance = parseFloat(ethers.utils.formatUnits(balance, decimals));
+
+      if (zBalance >= REQUIRED_ZVIO) {
+        payBtn.style.display = "inline-block";
+        payStatus.style.color = "#059669";
+        payStatus.innerHTML = `You have ${zBalance} ZVIO. Click below to pay 70 ZVIO and unlock North.`;
+      } else {
+        payBtn.style.display = "none";
+        payStatus.style.color = "#be123c";
+        payStatus.innerHTML = `⛔ You need at least 70 ZVIO to access North. <a href='https://www.dextools.io/app/en/polygon/pair-explorer/${ZVIO_CONTRACT}' target='_blank' style='color:#0077ee;'>Get ZVIO</a>`;
       }
-
-      try {
-        provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-        // Prompt user to switch to Polygon if not already
-        await provider.send("wallet_switchEthereumChain", [{ chainId: "0x89" }]); // 0x89 = 137 Polygon Mainnet
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        userAddress = await signer.getAddress();
-
-        walletDisplay.innerText = "🔗 Connected: " + userAddress;
-        unlockStatus.innerText = "Checking for ZVIO tokens...";
-
-        // Check ZVIO token balance
-        const zvio = new ethers.Contract(ZVIO_CONTRACT, ZVIO_ABI, provider);
-        const balance = await zvio.balanceOf(userAddress);
-        const decimals = await zvio.decimals ? await zvio.decimals() : 18;
-        const zBalance = parseFloat(ethers.utils.formatUnits(balance, decimals));
-
-        if (zBalance >= REQUIRED_ZVIO) {
-          unlockStatus.innerText = "✅ Access granted. You have " + zBalance + " ZVIO.";
-          localStorage.setItem("northUnlocked", "true");
-          document.getElementById("northDashboard").style.display = "block";
-        } else {
-          unlockStatus.innerHTML = "⛔ Access denied. You need at least <b>100 ZVIO</b>.<br><a href='https://www.dextools.io/app/en/polygon/pair-explorer/0x9778f41D030702404677013fa7444C5872244621' target='_blank' style='color:#0077ee;text-decoration:underline;'>Get ZVIO</a>";
-        }
-      } catch (err) {
-        if (err.code === 4902) {
-          unlockStatus.innerText = "Polygon mainnet not found. Please add Polygon to MetaMask.";
-        } else {
-          unlockStatus.innerText = "Connection error: " + (err.message || err);
-        }
-      }
-    });
-
-    // Auto-unlock for testing (session only)
-    if (localStorage.getItem("northUnlocked") === "true") {
-      document.getElementById("northDashboard").style.display = "block";
+    } catch (err) {
+      payStatus.style.color = "#be123c";
+      payStatus.innerText = "Connection error: " + (err.message || err);
     }
   });
+
+  payBtn.addEventListener("click", async function () {
+    payBtn.disabled = true;
+    payStatus.innerText = "Sending transaction...";
+    try {
+      const signer = provider.getSigner();
+      const zvioSigner = new ethers.Contract(ZVIO_CONTRACT, ZVIO_ABI, signer);
+      const amount = ethers.utils.parseUnits(REQUIRED_ZVIO.toString(), decimals);
+      const tx = await zvioSigner.transfer(RECEIVER, amount);
+      payStatus.innerText = "Transaction submitted. Waiting for confirmation...";
+      await tx.wait();
+      payStatus.style.color = "#059669";
+      payStatus.innerText = "✅ Payment received! North is now unlocked.";
+      localStorage.setItem("northUnlocked", "true");
+      setTimeout(() => {
+        document.getElementById("northPayWrapper").style.display = "none";
+        document.getElementById("northDashboard").style.display = "block";
+      }, 1200);
+    } catch (err) {
+      payBtn.disabled = false;
+      payStatus.style.color = "#be123c";
+      payStatus.innerText = "Payment failed: " + (err.message || err);
+    }
+  });
+
+  // Auto-unlock for session
+  if (localStorage.getItem("northUnlocked") === "true") {
+    document.getElementById("northPayWrapper").style.display = "none";
+    document.getElementById("northDashboard").style.display = "block";
+  }
+});
 </script>
 
+<!-- Add this after your unlock/payment flow in index.html -->
+
+<div id="northPhase1" style="font-family:'Segoe UI',sans-serif;max-width:500px;margin:40px auto;padding:30px 22px 26px 22px;background:#fff7ec;border-radius:13px;box-shadow:0 4px 16px rgba(0,0,0,0.09);display:block;">
+  <div style="font-size:1.07em;color:#00CFFF;font-weight:bold;margin-bottom:9px;">Phase 1 of 5</div>
+  <h2 style="color:#004B82;margin:0 0 13px 0;font-size:1.25rem;">Identity</h2>
+  <p style="color:#333;margin-bottom:18px;">Who are you, really? What values, strengths, or stories define you right now?</p>
+  <textarea id="identityInput" rows="6" placeholder="Write honestly, even if it’s messy. No one sees this but you." style="width:100%;padding:14px;font-size:1rem;border-radius:7px;border:1px solid #dbeafe;resize:vertical;margin-bottom:15px;"></textarea>
+  <div style="display:flex;gap:10px;">
+    <button onclick="getAIIdentityCoaching()" style="background:#00CFFF;color:#000;font-weight:bold;border:none;padding:12px 24px;border-radius:8px;font-size:1rem;cursor:pointer;flex:1;">Get Clarity from AI</button>
+    <button onclick="saveIdentityEntry()" style="background:#e0f7fb;color:#004B82;font-weight:bold;border:none;padding:12px 14px;border-radius:8px;font-size:1rem;cursor:pointer;">Save Only</button>
+  </div>
+  <div id="aiCoachBox" style="display:none;margin-top:20px;background:#f0f8fb;border:1px solid #00CFFF;border-radius:9px;padding:15px;">
+    <b style="color:#004B82;">AI Reflection:</b>
+    <div id="aiCoachText" style="white-space:pre-line;margin-top:9px;color:#333;"></div>
+  </div>
+  <div id="saveStatus" style="margin-top:13px;font-size:0.98em;color:#059669;display:none;">Saved!</div>
+  <div style="margin-top:22px;">
+    <button onclick="nextPhase()" style="background:#059669;color:#fff;font-weight:bold;border:none;padding:13px 34px;border-radius:8px;font-size:1rem;cursor:pointer;">Next</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+const PHASE_KEY = "north_identity_entry";
+const AICOACH_KEY = "north_identity_aicoach";
+
+function saveIdentityEntry() {
+  const val = document.getElementById("identityInput").value;
+  localStorage.setItem(PHASE_KEY, val);
+  document.getElementById("saveStatus").style.display = "block";
+  setTimeout(()=>{document.getElementById("saveStatus").style.display = "none";}, 1400);
+}
+if(localStorage.getItem(PHASE_KEY)) {
+  document.getElementById("identityInput").value = localStorage.getItem(PHASE_KEY);
+}
+if(localStorage.getItem(AICOACH_KEY)) {
+  document.getElementById("aiCoachText").innerText = localStorage.getItem(AICOACH_KEY);
+  document.getElementById("aiCoachBox").style.display = "block";
+}
+
+async function getAIIdentityCoaching() {
+  const val = document.getElementById("identityInput").value.trim();
+  if(!val) { alert("Please enter something about your identity first."); return; }
+  document.getElementById("aiCoachBox").style.display = "block";
+  document.getElementById("aiCoachText").innerText = "Thinking...";
+  // API key should be securely obfuscated or call your own backend if in production
+  const apiKey = "sk-...";
+  try {
+    const system = `You are a top-tier executive coach. Offer a short, insightful reflection for someone writing about their identity and values. Highlight what stands out and offer a supportive suggestion for moving forward.`;
+    const prompt = "Identity entry: " + val;
+    const res = await axios.post("https://api.openai.com/v1/chat/completions",{
+      model:"gpt-4",
+      messages:[
+        {role:"system",content:system},
+        {role:"user",content:prompt}
+      ],
+      max_tokens: 150,
+      temperature: 0.7
+    },{
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization":"Bearer "+apiKey
+      }
+    });
+    const out = res.data.choices[0].message.content.trim();
+    document.getElementById("aiCoachText").innerText = out;
+    localStorage.setItem(AICOACH_KEY, out);
+  } catch(err) {
+    document.getElementById("aiCoachText").innerText = "Error. Try again or check your connection.";
+  }
+}
+
+function nextPhase() {
+  saveIdentityEntry();
+  alert("Next phase coming soon! (This is where Phase 2: Resistance will launch.)");
+  // You will add show/hide logic for phase navigation here
+}
+</script>
+
+<!-- START North 5-Phase Journey: Place after your payment/wallet logic in index.html -->
+
+<div id="northJourney" style="font-family:'Segoe UI',sans-serif;max-width:520px;margin:42px auto 28px auto;padding:30px 22px 26px 22px;background:#fff7ec;border-radius:13px;box-shadow:0 4px 16px rgba(0,0,0,0.09);">
+  <!-- Progress Bar -->
+  <div id="progressBar" style="margin-bottom:22px;">
+    <span id="phaseIndicator" style="color:#00CFFF;font-weight:700;">Phase 1 of 5</span>
+    <div style="height:8px;background:#e0f7fb;border-radius:5px;overflow:hidden;margin-top:6px;">
+      <div id="progressFill" style="width:20%;height:100%;background:#00CFFF;"></div>
+    </div>
+  </div>
+  <!-- Phase Cards -->
+  <div id="phaseCard1" class="northPhaseCard">
+    <h2 style="color:#004B82;font-size:1.25rem;margin:0 0 13px 0;">Identity</h2>
+    <p style="color:#333;margin-bottom:18px;">Who are you, really? What values, strengths, or stories define you right now?</p>
+    <textarea id="identityInput" rows="6" placeholder="Write honestly, even if it’s messy. No one sees this but you." style="width:100%;padding:14px;font-size:1rem;border-radius:7px;border:1px solid #dbeafe;resize:vertical;margin-bottom:15px;"></textarea>
+    <div style="display:flex;gap:10px;">
+      <button onclick="getAICoach('identity')" style="background:#00CFFF;color:#000;font-weight:bold;border:none;padding:12px 24px;border-radius:8px;font-size:1rem;cursor:pointer;flex:1;">Get Clarity from AI</button>
+      <button onclick="savePhaseEntry('identity')" style="background:#e0f7fb;color:#004B82;font-weight:bold;border:none;padding:12px 14px;border-radius:8px;font-size:1rem;cursor:pointer;">Save Only</button>
+    </div>
+    <div id="aiCoachBox_identity" style="display:none;margin-top:20px;background:#f0f8fb;border:1px solid #00CFFF;border-radius:9px;padding:15px;">
+      <b style="color:#004B82;">AI Reflection:</b>
+      <div id="aiCoachText_identity" style="white-space:pre-line;margin-top:9px;color:#333;"></div>
+    </div>
+    <div id="saveStatus_identity" style="margin-top:13px;font-size:0.98em;color:#059669;display:none;">Saved!</div>
+    <div style="margin-top:22px;display:flex;justify-content:right;">
+      <button onclick="nextPhase(2)" style="background:#059669;color:#fff;font-weight:bold;border:none;padding:13px 34px;border-radius:8px;font-size:1rem;cursor:pointer;">Next</button>
+    </div>
+  </div>
+  <div id="phaseCard2" class="northPhaseCard" style="display:none;">
+    <h2 style="color:#004B82;font-size:1.25rem;margin:0 0 13px 0;">Resistance</h2>
+    <p style="color:#333;margin-bottom:18px;">What is holding you back or making progress difficult right now? Where do you notice friction?</p>
+    <textarea id="resistanceInput" rows="6" placeholder="Describe your biggest roadblocks, doubts, or frustrations here." style="width:100%;padding:14px;font-size:1rem;border-radius:7px;border:1px solid #dbeafe;resize:vertical;margin-bottom:15px;"></textarea>
+    <div style="display:flex;gap:10px;">
+      <button onclick="getAICoach('resistance')" style="background:#00CFFF;color:#000;font-weight:bold;border:none;padding:12px 24px;border-radius:8px;font-size:1rem;cursor:pointer;flex:1;">Get Insight from AI</button>
+      <button onclick="savePhaseEntry('resistance')" style="background:#e0f7fb;color:#004B82;font-weight:bold;border:none;padding:12px 14px;border-radius:8px;font-size:1rem;cursor:pointer;">Save Only</button>
+    </div>
+    <div id="aiCoachBox_resistance" style="display:none;margin-top:20px;background:#f0f8fb;border:1px solid #00CFFF;border-radius:9px;padding:15px;">
+      <b style="color:#004B82;">AI Insight:</b>
+      <div id="aiCoachText_resistance" style="white-space:pre-line;margin-top:9px;color:#333;"></div>
+    </div>
+    <div id="saveStatus_resistance" style="margin-top:13px;font-size:0.98em;color:#059669;display:none;">Saved!</div>
+    <div style="margin-top:22px;display:flex;justify-content:space-between;">
+      <button onclick="nextPhase(1)" style="background:#e0f7fb;color:#004B82;font-weight:bold;border:none;padding:13px 26px;border-radius:8px;font-size:1rem;cursor:pointer;">Back</button>
+      <button onclick="nextPhase(3)" style="background:#059669;color:#fff;font-weight:bold;border:none;padding:13px 34px;border-radius:8px;font-size:1rem;cursor:pointer;">Next</button>
+    </div>
+  </div>
+  <div id="phaseCard3" class="northPhaseCard" style="display:none;">
+    <h2 style="color:#004B82;font-size:1.25rem;margin:0 0 13px 0;">Emotions</h2>
+    <p style="color:#333;margin-bottom:18px;">How do you feel about your business and your progress? What emotions come up most often?</p>
+    <textarea id="emotionsInput" rows="6" placeholder="Share your honest feelings and emotional landscape." style="width:100%;padding:14px;font-size:1rem;border-radius:7px;border:1px solid #dbeafe;resize:vertical;margin-bottom:15px;"></textarea>
+    <div style="display:flex;gap:10px;">
+      <button onclick="getAICoach('emotions')" style="background:#00CFFF;color:#000;font-weight:bold;border:none;padding:12px 24px;border-radius:8px;font-size:1rem;cursor:pointer;flex:1;">Get Perspective from AI</button>
+      <button onclick="savePhaseEntry('emotions')" style="background:#e0f7fb;color:#004B82;font-weight:bold;border:none;padding:12px 14px;border-radius:8px;font-size:1rem;cursor:pointer;">Save Only</button>
+    </div>
+    <div id="aiCoachBox_emotions" style="display:none;margin-top:20px;background:#f0f8fb;border:1px solid #00CFFF;border-radius:9px;padding:15px;">
+      <b style="color:#004B82;">AI Perspective:</b>
+      <div id="aiCoachText_emotions" style="white-space:pre-line;margin-top:9px;color:#333;"></div>
+    </div>
+    <div id="saveStatus_emotions" style="margin-top:13px;font-size:0.98em;color:#059669;display:none;">Saved!</div>
+    <div style="margin-top:22px;display:flex;justify-content:space-between;">
+      <button onclick="nextPhase(2)" style="background:#e0f7fb;color:#004B82;font-weight:bold;border:none;padding:13px 26px;border-radius:8px;font-size:1rem;cursor:pointer;">Back</button>
+      <button onclick="nextPhase(4)" style="background:#059669;color:#fff;font-weight:bold;border:none;padding:13px 34px;border-radius:8px;font-size:1rem;cursor:pointer;">Next</button>
+    </div>
+  </div>
+  <div id="phaseCard4" class="northPhaseCard" style="display:none;">
+    <h2 style="color:#004B82;font-size:1.25rem;margin:0 0 13px 0;">Vision</h2>
+    <p style="color:#333;margin-bottom:18px;">Imagine your ideal future. Where do you want to go, both personally and professionally? What does true success look like?</p>
+    <textarea id="visionInput" rows="6" placeholder="Paint a vivid picture of what your best life and business could be." style="width:100%;padding:14px;font-size:1rem;border-radius:7px;border:1px solid #dbeafe;resize:vertical;margin-bottom:15px;"></textarea>
+    <div style="display:flex;gap:10px;">
+      <button onclick="getAICoach('vision')" style="background:#00CFFF;color:#000;font-weight:bold;border:none;padding:12px 24px;border-radius:8px;font-size:1rem;cursor:pointer;flex:1;">Get Vision from AI</button>
+      <button onclick="savePhaseEntry('vision')" style="background:#e0f7fb;color:#004B82;font-weight:bold;border:none;padding:12px 14px;border-radius:8px;font-size:1rem;cursor:pointer;">Save Only</button>
+    </div>
+    <div id="aiCoachBox_vision" style="display:none;margin-top:20px;background:#f0f8fb;border:1px solid #00CFFF;border-radius:9px;padding:15px;">
+      <b style="color:#004B82;">AI Vision:</b>
+      <div id="aiCoachText_vision" style="white-space:pre-line;margin-top:9px;color:#333;"></div>
+    </div>
+    <div id="saveStatus_vision" style="margin-top:13px;font-size:0.98em;color:#059669;display:none;">Saved!</div>
+    <div style="margin-top:22px;display:flex;justify-content:space-between;">
+      <button onclick="nextPhase(3)" style="background:#e0f7fb;color:#004B82;font-weight:bold;border:none;padding:13px 26px;border-radius:8px;font-size:1rem;cursor:pointer;">Back</button>
+      <button onclick="nextPhase(5)" style="background:#059669;color:#fff;font-weight:bold;border:none;padding:13px 34px;border-radius:8px;font-size:1rem;cursor:pointer;">Next</button>
+    </div>
+  </div>
+  <div id="phaseCard5" class="northPhaseCard" style="display:none;">
+    <h2 style="color:#004B82;font-size:1.25rem;margin:0 0 13px 0;">Direction</h2>
+    <p style="color:#333;margin-bottom:18px;">What are your next real steps? What can you commit to right now to move forward?</p>
+    <textarea id="directionInput" rows="6" placeholder="List 1–3 tangible actions you’ll take next week to gain momentum." style="width:100%;padding:14px;font-size:1rem;border-radius:7px;border:1px solid #dbeafe;resize:vertical;margin-bottom:15px;"></textarea>
+    <div style="display:flex;gap:10px;">
+      <button onclick="getAICoach('direction')" style="background:#00CFFF;color:#000;font-weight:bold;border:none;padding:12px 24px;border-radius:8px;font-size:1rem;cursor:pointer;flex:1;">Get Next Steps from AI</button>
+      <button onclick="savePhaseEntry('direction')" style="background:#e0f7fb;color:#004B82;font-weight:bold;border:none;padding:12px 14px;border-radius:8px;font-size:1rem;cursor:pointer;">Save Only</button>
+    </div>
+    <div id="aiCoachBox_direction" style="display:none;margin-top:20px;background:#f0f8fb;border:1px solid #00CFFF;border-radius:9px;padding:15px;">
+      <b style="color:#004B82;">AI Next Steps:</b>
+      <div id="aiCoachText_direction" style="white-space:pre-line;margin-top:9px;color:#333;"></div>
+    </div>
+    <div id="saveStatus_direction" style="margin-top:13px;font-size:0.98em;color:#059669;display:none;">Saved!</div>
+    <div style="margin-top:22px;display:flex;justify-content:space-between;">
+      <button onclick="nextPhase(4)" style="background:#e0f7fb;color:#004B82;font-weight:bold;border:none;padding:13px 26px;border-radius:8px;font-size:1rem;cursor:pointer;">Back</button>
+      <button onclick="finishJourney()" style="background:#004B82;color:#fff;font-weight:bold;border:none;padding:13px 32px;border-radius:8px;font-size:1rem;cursor:pointer;">Finish</button>
+    </div>
+  </div>
+  <!-- End of cards -->
+  <div id="journeyDone" style="display:none;margin-top:25px;text-align:center;">
+    <h2 style="color:#059669;">Congratulations!</h2>
+    <p style="color:#444;">You’ve completed the North Clarity Journey.<br>Come back anytime for new insights or to update your journey.</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+// --- Phase Handling ---
+function nextPhase(num) {
+  // Save any current entry automatically
+  if(num === 1) savePhaseEntry('identity');
+  if(num === 2) savePhaseEntry('resistance');
+  if(num === 3) savePhaseEntry('emotions');
+  if(num === 4) savePhaseEntry('vision');
+  if(num === 5) savePhaseEntry('direction');
+
+  // Hide all cards
+  for(let i=1;i<=5;i++) document.getElementById('phaseCard'+i).style.display = 'none';
+  document.getElementById('journeyDone').style.display = 'none';
+
+  if(num >= 1 && num <= 5) {
+    document.getElementById('phaseCard'+num).style.display = 'block';
+    // Update progress bar
+    document.getElementById('phaseIndicator').innerText = "Phase " + num + " of 5";
+    document.getElementById('progressFill').style.width = (num*20)+"%";
+  }
+}
+
+function finishJourney() {
+  for(let i=1;i<=5;i++) document.getElementById('phaseCard'+i).style.display = 'none';
+  document.getElementById('progressFill').style.width = "100%";
+  document.getElementById('journeyDone').style.display = 'block';
+  document.getElementById('phaseIndicator').innerText = "Journey Complete!";
+}
+
+// --- Save/load for each phase ---
+function savePhaseEntry(phase) {
+  const key = "north_" + phase + "_entry";
+  const textarea = document.getElementById(phase + "Input");
+  localStorage.setItem(key, textarea.value);
+  document.getElementById("saveStatus_"+phase).style.display = "block";
+  setTimeout(()=>{document.getElementById("saveStatus_"+phase).style.display = "none";}, 1400);
+}
+['identity','resistance','emotions','vision','direction'].forEach(phase=>{
+  if(localStorage.getItem("north_"+phase+"_entry")) {
+    document.getElementById(phase+"Input").value = localStorage.getItem("north_"+phase+"_entry");
+  }
+  if(localStorage.getItem("north_"+phase+"_aicoach")) {
+    document.getElementById("aiCoachText_"+phase).innerText = localStorage.getItem("north_"+phase+"_aicoach");
+    document.getElementById("aiCoachBox_"+phase).style.display = "block";
+  }
+});
+
+// --- AI Coaching per phase ---
+async function getAICoach(phase) {
+  const val = document.getElementById(phase+"Input").value.trim();
+  if(!val) { alert("Please fill in your answer first."); return; }
+  document.getElementById("aiCoachBox_"+phase).style.display = "block";
+  document.getElementById("aiCoachText_"+phase).innerText = "Thinking...";
+  // Insert your obfuscated or backend OpenAI key here
+  const apiKey = "sk-...";
+  let system, prompt;
+  switch(phase) {
+    case 'identity':
+      system = "You are a top-tier executive coach. Offer a short, insightful reflection for someone writing about their identity and values. Highlight what stands out and offer a supportive suggestion for moving forward.";
+      prompt = "Identity entry: " + val;
+      break;
+    case 'resistance':
+      system = "You are a business strategist. Give a concise but thoughtful reflection on someone's biggest business or personal resistance, offering one suggestion for how to address it.";
+      prompt = "Resistance entry: " + val;
+      break;
+    case 'emotions':
+      system = "You are a coach and therapist. Read a summary of someone's current emotional landscape, and give an encouraging, actionable suggestion for using emotion to build momentum.";
+      prompt = "Emotions entry: " + val;
+      break;
+    case 'vision':
+      system = "You are a visionary business coach. Reflect on someone's ideal life and business vision, and offer one way to take a concrete step toward that vision.";
+      prompt = "Vision entry: " + val;
+      break;
+    case 'direction':
+      system = "You are a practical, motivating coach. The user has listed 1-3 tangible next steps. Offer a short comment on how to take action immediately, and a reminder to reflect again soon.";
+      prompt = "Direction entry: " + val;
+      break;
+  }
+  try {
+    const res = await axios.post("https://api.openai.com/v1/chat/completions", {
+      model: "gpt-4",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: prompt }
+      ],
+      max_tokens: 150,
+      temperature: 0.7
+    },{
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization":"Bearer "+apiKey
+      }
+    });
+    const out = res.data.choices[0].message.content.trim();
+    document.getElementById("aiCoachText_"+phase).innerText = out;
+    document.getElementById("aiCoachBox_"+phase).style.display = "block";
+    localStorage.setItem("north_"+phase+"_aicoach", out);
+  } catch(err) {
+    document.getElementById("aiCoachText_"+phase).innerText = "Error. Try again or check your connection.";
+  }
+}
+</script>
