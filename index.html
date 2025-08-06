@@ -1,0 +1,95 @@
+<!-- Load Ethers.js -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+<!-- Hero Section -->
+<div style="font-family:'Segoe UI',sans-serif;max-width:800px;margin:40px auto;padding:40px 32px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);text-align:center;">
+  <h1 style="font-size:30px;color:#004B82;margin-bottom:12px;">🧭 North by Zaivio</h1>
+  <p style="font-size:17px;color:#222;font-weight:500;margin-bottom:24px;">A guided clarity journey for life and business — grounded, reflective, and fueled by real momentum.</p>
+  <div style="font-size:15px;color:#444;text-align:left;max-width:640px;margin:0 auto;">
+    <ul style="padding-left:20px;margin-bottom:16px;">
+      <li style="margin-bottom:10px;">✅ 5 guided self-coaching phases: identity, resistance, emotions, and direction</li>
+      <li style="margin-bottom:10px;">✅ Weekly check-ins, momentum tracking, and Milestone Cards</li>
+      <li style="margin-bottom:10px;">✅ Built for creators, solopreneurs, and purpose-driven professionals</li>
+      <li style="margin-bottom:10px;">✅ Private by design — everything runs in your browser, nothing stored</li>
+    </ul>
+    <p style="margin-bottom:0;">North isn’t just for thinking — it’s for shifting. You’ll walk away with new insights and tangible action.</p>
+  </div>
+</div>
+
+<!-- Connect Wallet Section -->
+<div style="font-family:'Segoe UI',sans-serif;max-width:700px;margin:40px auto;padding:32px;background:#ffffff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.06);text-align:center;">
+  <h2 style="font-size:24px;color:#004B82;margin-bottom:12px;">🔐 Connect to Start</h2>
+  <p style="font-size:15px;color:#444;margin-bottom:20px;">Connect your wallet on Polygon to unlock North. Requires at least <b>100 ZVIO</b> tokens.</p>
+  <button id="connectBtn" style="background-color:#00CFFF;color:white;border:none;padding:12px 24px;font-size:16px;border-radius:8px;cursor:pointer;">🔗 Connect Wallet</button>
+  <p id="walletDisplay" style="margin-top:16px;font-size:14px;color:#555;"></p>
+  <p id="unlockStatus" style="color:#be123c;font-size:15px;margin-top:10px;"></p>
+</div>
+
+<!-- Dashboard Preview -->
+<div id="northDashboard" style="display:none; font-family:'Segoe UI',sans-serif;max-width:720px;margin:40px auto;padding:32px;background:#f9f9f9;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.06);text-align:center;">
+  <h2 style="font-size:24px;color:#1E1E1E;">🎯 Welcome to North</h2>
+  <p style="font-size:15px;color:#444;">Your clarity journey starts here.</p>
+</div>
+
+<script>
+  // ZVIO ERC20 contract on Polygon (18 decimals)
+  const ZVIO_CONTRACT = "0x9778f41D030702404677013fa7444C5872244621";
+  const ZVIO_ABI = [
+    "function balanceOf(address owner) view returns (uint256)",
+    "function decimals() view returns (uint8)"
+  ];
+  const REQUIRED_ZVIO = 100; // minimum required
+
+  let provider, signer, userAddress;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const connectBtn = document.getElementById("connectBtn");
+    const walletDisplay = document.getElementById("walletDisplay");
+    const unlockStatus = document.getElementById("unlockStatus");
+
+    connectBtn.addEventListener("click", async function () {
+      if (!window.ethereum) {
+        alert("MetaMask is not installed. Please use a browser with MetaMask.");
+        return;
+      }
+
+      try {
+        provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+        // Prompt user to switch to Polygon if not already
+        await provider.send("wallet_switchEthereumChain", [{ chainId: "0x89" }]); // 0x89 = 137 Polygon Mainnet
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        userAddress = await signer.getAddress();
+
+        walletDisplay.innerText = "🔗 Connected: " + userAddress;
+        unlockStatus.innerText = "Checking for ZVIO tokens...";
+
+        // Check ZVIO token balance
+        const zvio = new ethers.Contract(ZVIO_CONTRACT, ZVIO_ABI, provider);
+        const balance = await zvio.balanceOf(userAddress);
+        const decimals = await zvio.decimals ? await zvio.decimals() : 18;
+        const zBalance = parseFloat(ethers.utils.formatUnits(balance, decimals));
+
+        if (zBalance >= REQUIRED_ZVIO) {
+          unlockStatus.innerText = "✅ Access granted. You have " + zBalance + " ZVIO.";
+          localStorage.setItem("northUnlocked", "true");
+          document.getElementById("northDashboard").style.display = "block";
+        } else {
+          unlockStatus.innerHTML = "⛔ Access denied. You need at least <b>100 ZVIO</b>.<br><a href='https://www.dextools.io/app/en/polygon/pair-explorer/0x9778f41D030702404677013fa7444C5872244621' target='_blank' style='color:#0077ee;text-decoration:underline;'>Get ZVIO</a>";
+        }
+      } catch (err) {
+        if (err.code === 4902) {
+          unlockStatus.innerText = "Polygon mainnet not found. Please add Polygon to MetaMask.";
+        } else {
+          unlockStatus.innerText = "Connection error: " + (err.message || err);
+        }
+      }
+    });
+
+    // Auto-unlock for testing (session only)
+    if (localStorage.getItem("northUnlocked") === "true") {
+      document.getElementById("northDashboard").style.display = "block";
+    }
+  });
+</script>
+
