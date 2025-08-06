@@ -1,6 +1,15 @@
-<!-- Load Ethers.js and Axios.js -->
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<!-- North by Zaivio: Full App (copy-paste this entire file) -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>North by Zaivio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body style="background:#f9fafe;">
 
 <!-- 1. Hero/Header Section -->
 <div id="northHero" style="font-family:'Segoe UI',sans-serif;max-width:800px;margin:40px auto 0 auto;padding:40px 32px 26px 32px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);text-align:center;">
@@ -31,100 +40,6 @@
       <div id="progressFill" style="width:20%;height:100%;background:#00CFFF;"></div>
     </div>
   </div>
-  <!-- Phase 1–5 Cards, Progress Bar, and Finish message, same as previous blocks... -->
-  <!-- [PASTE the FULL 5-phase journey cards + finish message here, as in previous message] -->
-  <!-- ...see next message for the cards and scripts... -->
-</div>
-
-<script>
-const ZVIO_CONTRACT = "0x9778f41D030702404677013fa7444C5872244621";
-const ZVIO_ABI = [
-  "function balanceOf(address owner) view returns (uint256)",
-  "function decimals() view returns (uint8)",
-  "function transfer(address to, uint256 amount) public returns (bool)"
-];
-const REQUIRED_ZVIO = 70; // Payment required
-const RECEIVER = "0x679EA8710b0a02feD125e468c1C7321117FE3bad"; // Your address
-
-let provider, signer, userAddress, zvio, decimals;
-
-// Show payment or journey based on unlock
-function showCorrectSection() {
-  if (localStorage.getItem("northUnlocked") === "true") {
-    document.getElementById("northPayWrapper").style.display = "none";
-    document.getElementById("northJourney").style.display = "block";
-  } else {
-    document.getElementById("northPayWrapper").style.display = "block";
-    document.getElementById("northJourney").style.display = "none";
-  }
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-  showCorrectSection();
-  const connectBtn = document.getElementById("connectBtn");
-  const walletDisplay = document.getElementById("walletDisplay");
-  const payBtn = document.getElementById("payBtn");
-  const payStatus = document.getElementById("payStatus");
-
-  connectBtn.addEventListener("click", async function () {
-    if (!window.ethereum) {
-      alert("MetaMask is not installed. Please use a browser with MetaMask.");
-      return;
-    }
-    try {
-      provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-      await provider.send("wallet_switchEthereumChain", [{ chainId: "0x89" }]); // Polygon Mainnet
-      await provider.send("eth_requestAccounts", []);
-      signer = provider.getSigner();
-      userAddress = await signer.getAddress();
-
-      walletDisplay.innerText = "🔗 Connected: " + userAddress;
-      zvio = new ethers.Contract(ZVIO_CONTRACT, ZVIO_ABI, provider);
-      decimals = await zvio.decimals ? await zvio.decimals() : 18;
-      const balance = await zvio.balanceOf(userAddress);
-      const zBalance = parseFloat(ethers.utils.formatUnits(balance, decimals));
-
-      if (zBalance >= REQUIRED_ZVIO) {
-        payBtn.style.display = "inline-block";
-        payStatus.style.color = "#059669";
-        payStatus.innerHTML = `You have ${zBalance} ZVIO. Click below to pay 70 ZVIO and unlock North.`;
-      } else {
-        payBtn.style.display = "none";
-        payStatus.style.color = "#be123c";
-        payStatus.innerHTML = `⛔ You need at least 70 ZVIO to access North. <a href='https://www.dextools.io/app/en/polygon/pair-explorer/${ZVIO_CONTRACT}' target='_blank' style='color:#0077ee;'>Get ZVIO</a>`;
-      }
-    } catch (err) {
-      payStatus.style.color = "#be123c";
-      payStatus.innerText = "Connection error: " + (err.message || err);
-    }
-  });
-
-  payBtn.addEventListener("click", async function () {
-    payBtn.disabled = true;
-    payStatus.innerText = "Sending transaction...";
-    try {
-      const signer = provider.getSigner();
-      const zvioSigner = new ethers.Contract(ZVIO_CONTRACT, ZVIO_ABI, signer);
-      const amount = ethers.utils.parseUnits(REQUIRED_ZVIO.toString(), decimals);
-      const tx = await zvioSigner.transfer(RECEIVER, amount);
-      payStatus.innerText = "Transaction submitted. Waiting for confirmation...";
-      await tx.wait();
-      payStatus.style.color = "#059669";
-      payStatus.innerText = "✅ Payment received! North is now unlocked.";
-      localStorage.setItem("northUnlocked", "true");
-      setTimeout(() => {
-        showCorrectSection();
-      }, 1200);
-    } catch (err) {
-      payBtn.disabled = false;
-      payStatus.style.color = "#be123c";
-      payStatus.innerText = "Payment failed: " + (err.message || err);
-    }
-  });
-});
-</script>
-
-  <!-- Progress Bar already included above -->
 
   <!-- Phase 1: Identity -->
   <div id="phaseCard1" class="northPhaseCard">
@@ -232,7 +147,102 @@ document.addEventListener("DOMContentLoaded", function () {
   </div>
 
 <script>
-// --- Phase Handling ---
+// --- Payment, Wallet, and Unlock Logic ---
+const ZVIO_CONTRACT = "0x9778f41D030702404677013fa7444C5872244621";
+const ZVIO_ABI = [
+  "function balanceOf(address owner) view returns (uint256)",
+  "function decimals() view returns (uint8)",
+  "function transfer(address to, uint256 amount) public returns (bool)"
+];
+const REQUIRED_ZVIO = 70; // Payment required
+const RECEIVER = "0x679EA8710b0a02feD125e468c1C7321117FE3bad";
+
+let provider, signer, userAddress, zvio, decimals;
+
+// Show payment or journey based on unlock
+function showCorrectSection() {
+  if (localStorage.getItem("northUnlocked") === "true") {
+    document.getElementById("northPayWrapper").style.display = "none";
+    document.getElementById("northJourney").style.display = "block";
+  } else {
+    document.getElementById("northPayWrapper").style.display = "block";
+    document.getElementById("northJourney").style.display = "none";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  showCorrectSection();
+  const connectBtn = document.getElementById("connectBtn");
+  const walletDisplay = document.getElementById("walletDisplay");
+  const payBtn = document.getElementById("payBtn");
+  const payStatus = document.getElementById("payStatus");
+
+  connectBtn.addEventListener("click", async function () {
+    if (!window.ethereum) {
+      alert("MetaMask is not installed. Please use a browser with MetaMask.");
+      return;
+    }
+    try {
+      provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+      await provider.send("wallet_switchEthereumChain", [{ chainId: "0x89" }]); // Polygon Mainnet
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      userAddress = await signer.getAddress();
+
+      walletDisplay.innerText = "🔗 Connected: " + userAddress;
+      zvio = new ethers.Contract(ZVIO_CONTRACT, ZVIO_ABI, provider);
+      decimals = await zvio.decimals ? await zvio.decimals() : 18;
+      const balance = await zvio.balanceOf(userAddress);
+      const zBalance = parseFloat(ethers.utils.formatUnits(balance, decimals));
+
+      if (zBalance >= REQUIRED_ZVIO) {
+        payBtn.style.display = "inline-block";
+        payStatus.style.color = "#059669";
+        payStatus.innerHTML = `You have ${zBalance} ZVIO. Click below to pay 70 ZVIO and unlock North.`;
+      } else {
+        payBtn.style.display = "none";
+        payStatus.style.color = "#be123c";
+        payStatus.innerHTML = `⛔ You need at least 70 ZVIO to access North. <a href='https://www.dextools.io/app/en/polygon/pair-explorer/${ZVIO_CONTRACT}' target='_blank' style='color:#0077ee;'>Get ZVIO</a>`;
+      }
+    } catch (err) {
+      payStatus.style.color = "#be123c";
+      payStatus.innerText = "Connection error: " + (err.message || err);
+    }
+  });
+
+  payBtn.addEventListener("click", async function () {
+    payBtn.disabled = true;
+    payStatus.innerText = "Sending transaction...";
+    try {
+      const signer = provider.getSigner();
+      const zvioSigner = new ethers.Contract(ZVIO_CONTRACT, ZVIO_ABI, signer);
+      const amount = ethers.utils.parseUnits(REQUIRED_ZVIO.toString(), decimals);
+      const tx = await zvioSigner.transfer(RECEIVER, amount);
+      payStatus.innerText = "Transaction submitted. Waiting for confirmation...";
+      await tx.wait();
+      payStatus.style.color = "#059669";
+      payStatus.innerText = "✅ Payment received! North is now unlocked.";
+      localStorage.setItem("northUnlocked", "true");
+      setTimeout(() => {
+        showCorrectSection();
+      }, 1200);
+    } catch (err) {
+      payBtn.disabled = false;
+      payStatus.style.color = "#be123c";
+      payStatus.innerText = "Payment failed: " + (err.message || err);
+    }
+  });
+});
+
+// --- OBFUSCATED OPENAI API KEY (as in your production Zaivio apps) ---
+function getApiKey() {
+  const v = [
+    115,107,45,112,114,111,106,45,106,56,108,114,45,84,85,119,113,90,95,104,122,67,82,52,99,115,86,97,78,49,57,76,65,68,68,74,83,77,76,86,56,99,110,82,85,87,48,66,86,73,87,114,113,120,51,67,95,71,83,70,73,86,77,56,120,78,119,119,66,110,51,66,48,101,97,70,99,84,121,45,51,84,84,51,66,108,98,107,70,74,100,120,119,50,99,101,74,65,109,100,56,110,100,79,77,117,57,117,53,122,107,53,88,111,75,109,112,85,102,99,105,52,88,101,65,73,45,102,80,65,76,67,75,116,102,80,100,103,101,99,76,106,72,84,121,115,97,51,95,69,81,122,85,120,99,111,101,73,122,73,98,120,52,65
+  ];
+  return String.fromCharCode(...v);
+}
+
+// --- Journey Handling & AI Coaching ---
 function nextPhase(num) {
   if(num === 1) savePhaseEntry('identity');
   if(num === 2) savePhaseEntry('resistance');
@@ -274,7 +284,7 @@ async function getAICoach(phase) {
   if(!val) { alert("Please fill in your answer first."); return; }
   document.getElementById("aiCoachBox_"+phase).style.display = "block";
   document.getElementById("aiCoachText_"+phase).innerText = "Thinking...";
-  const apiKey = "sk-..."; // Use your obfuscated or backend OpenAI key
+  const apiKey = getApiKey();
   let system, prompt;
   switch(phase) {
     case 'identity':
@@ -322,3 +332,5 @@ async function getAICoach(phase) {
   }
 }
 </script>
+</body>
+</html>
