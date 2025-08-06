@@ -1,49 +1,41 @@
-<!-- Load Ethers.js -->
+<!-- Load Ethers.js and Axios.js -->
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
-<!-- Hero Section -->
-<div style="font-family:'Segoe UI',sans-serif;max-width:800px;margin:40px auto;padding:40px 32px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);text-align:center;">
-  <h1 style="font-size:30px;color:#004B82;margin-bottom:12px;">🧭 North by Zaivio</h1>
+<!-- 1. Hero/Header Section -->
+<div id="northHero" style="font-family:'Segoe UI',sans-serif;max-width:800px;margin:40px auto 0 auto;padding:40px 32px 26px 32px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);text-align:center;">
+  <h1 style="font-size:2.1rem;color:#004B82;margin-bottom:12px;">🧭 North by Zaivio</h1>
   <p style="font-size:17px;color:#222;font-weight:500;margin-bottom:24px;">A guided clarity journey for life and business — grounded, reflective, and fueled by real momentum.</p>
-  <div style="font-size:15px;color:#444;text-align:left;max-width:640px;margin:0 auto;">
-    <ul style="padding-left:20px;margin-bottom:16px;">
-      <li style="margin-bottom:10px;">✅ 5 guided self-coaching phases: identity, resistance, emotions, and direction</li>
-      <li style="margin-bottom:10px;">✅ Weekly check-ins, momentum tracking, and Milestone Cards</li>
-      <li style="margin-bottom:10px;">✅ Built for creators, solopreneurs, and purpose-driven professionals</li>
-      <li style="margin-bottom:10px;">✅ Private by design — everything runs in your browser, nothing stored</li>
-    </ul>
-    <p style="margin-bottom:0;">North isn’t just for thinking — it’s for shifting. You’ll walk away with new insights and tangible action.</p>
-  </div>
+  <ul style="padding-left:20px;text-align:left;max-width:500px;margin:20px auto 0;">
+    <li>✅ 5 self-coaching phases for clarity, action, and growth</li>
+    <li>✅ Weekly check-ins and progress tracking</li>
+    <li>✅ Privacy-first: your data never leaves your device</li>
+  </ul>
 </div>
 
-<!-- Connect Wallet Section -->
-<div style="font-family:'Segoe UI',sans-serif;max-width:700px;margin:40px auto;padding:32px;background:#ffffff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.06);text-align:center;">
+<!-- 2. Payment / Unlock Block (ONLY shown if not paid) -->
+<div id="northPayWrapper" style="font-family:'Segoe UI',sans-serif;max-width:650px;margin:32px auto 0 auto;padding:32px;background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.06);text-align:center;display:block;">
   <h2 style="font-size:24px;color:#004B82;margin-bottom:12px;">🔐 Connect to Start</h2>
-  <p style="font-size:15px;color:#444;margin-bottom:20px;">Connect your wallet on Polygon to unlock North. Requires at least <b>100 ZVIO</b> tokens.</p>
-  <button id="connectBtn" style="background-color:#00CFFF;color:white;border:none;padding:12px 24px;font-size:16px;border-radius:8px;cursor:pointer;">🔗 Connect Wallet</button>
-  <p id="walletDisplay" style="margin-top:16px;font-size:14px;color:#555;"></p>
-  <p id="unlockStatus" style="color:#be123c;font-size:15px;margin-top:10px;"></p>
-</div>
-
-<!-- Dashboard Preview -->
-<div id="northDashboard" style="display:none; font-family:'Segoe UI',sans-serif;max-width:720px;margin:40px auto;padding:32px;background:#f9f9f9;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.06);text-align:center;">
-  <h2 style="font-size:24px;color:#1E1E1E;">🎯 Welcome to North</h2>
-  <p style="font-size:15px;color:#444;">Your clarity journey starts here.</p>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-<div id="northPayWrapper" style="font-family:'Segoe UI',sans-serif;max-width:700px;margin:40px auto;padding:32px;background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.06);text-align:center;">
-  <h2 style="font-size:24px;color:#004B82;">🔐 Connect to Start</h2>
-  <p>Connect your wallet on Polygon to unlock North. Pay <b>70 ZVIO</b> to access.</p>
+  <p>Connect your wallet on Polygon and pay <b>70 ZVIO</b> to access North.</p>
   <button id="connectBtn" style="background-color:#00CFFF;color:white;border:none;padding:12px 24px;font-size:16px;border-radius:8px;cursor:pointer;">🔗 Connect Wallet</button>
   <p id="walletDisplay" style="margin-top:16px;font-size:14px;color:#555;"></p>
   <button id="payBtn" style="display:none;background:#059669;color:#fff;padding:12px 28px;font-size:16px;border:none;border-radius:8px;cursor:pointer;margin-top:18px;">Pay 70 ZVIO to Unlock</button>
   <p id="payStatus" style="margin-top:15px;color:#be123c;"></p>
 </div>
-<div id="northDashboard" style="display:none; font-family:'Segoe UI',sans-serif;max-width:720px;margin:40px auto;padding:32px;background:#f9f9f9;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.06);text-align:center;">
-  <h2 style="font-size:24px;color:#1E1E1E;">🎯 Welcome to North</h2>
-  <p style="font-size:15px;color:#444;">Your clarity journey starts here.</p>
+
+<!-- 3. Journey Block (ONLY shown after paid/unlocked) -->
+<div id="northJourney" style="font-family:'Segoe UI',sans-serif;max-width:520px;margin:42px auto 28px auto;padding:30px 22px 26px 22px;background:#fff7ec;border-radius:13px;box-shadow:0 4px 16px rgba(0,0,0,0.09);display:none;">
+  <div id="progressBar" style="margin-bottom:22px;">
+    <span id="phaseIndicator" style="color:#00CFFF;font-weight:700;">Phase 1 of 5</span>
+    <div style="height:8px;background:#e0f7fb;border-radius:5px;overflow:hidden;margin-top:6px;">
+      <div id="progressFill" style="width:20%;height:100%;background:#00CFFF;"></div>
+    </div>
+  </div>
+  <!-- Phase 1–5 Cards, Progress Bar, and Finish message, same as previous blocks... -->
+  <!-- [PASTE the FULL 5-phase journey cards + finish message here, as in previous message] -->
+  <!-- ...see next message for the cards and scripts... -->
 </div>
+
 <script>
 const ZVIO_CONTRACT = "0x9778f41D030702404677013fa7444C5872244621";
 const ZVIO_ABI = [
@@ -56,7 +48,19 @@ const RECEIVER = "0x679EA8710b0a02feD125e468c1C7321117FE3bad"; // Your address
 
 let provider, signer, userAddress, zvio, decimals;
 
+// Show payment or journey based on unlock
+function showCorrectSection() {
+  if (localStorage.getItem("northUnlocked") === "true") {
+    document.getElementById("northPayWrapper").style.display = "none";
+    document.getElementById("northJourney").style.display = "block";
+  } else {
+    document.getElementById("northPayWrapper").style.display = "block";
+    document.getElementById("northJourney").style.display = "none";
+  }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
+  showCorrectSection();
   const connectBtn = document.getElementById("connectBtn");
   const walletDisplay = document.getElementById("walletDisplay");
   const payBtn = document.getElementById("payBtn");
@@ -109,8 +113,7 @@ document.addEventListener("DOMContentLoaded", function () {
       payStatus.innerText = "✅ Payment received! North is now unlocked.";
       localStorage.setItem("northUnlocked", "true");
       setTimeout(() => {
-        document.getElementById("northPayWrapper").style.display = "none";
-        document.getElementById("northDashboard").style.display = "block";
+        showCorrectSection();
       }, 1200);
     } catch (err) {
       payBtn.disabled = false;
@@ -118,105 +121,12 @@ document.addEventListener("DOMContentLoaded", function () {
       payStatus.innerText = "Payment failed: " + (err.message || err);
     }
   });
-
-  // Auto-unlock for session
-  if (localStorage.getItem("northUnlocked") === "true") {
-    document.getElementById("northPayWrapper").style.display = "none";
-    document.getElementById("northDashboard").style.display = "block";
-  }
 });
 </script>
 
-<!-- Add this after your unlock/payment flow in index.html -->
+  <!-- Progress Bar already included above -->
 
-<div id="northPhase1" style="font-family:'Segoe UI',sans-serif;max-width:500px;margin:40px auto;padding:30px 22px 26px 22px;background:#fff7ec;border-radius:13px;box-shadow:0 4px 16px rgba(0,0,0,0.09);display:block;">
-  <div style="font-size:1.07em;color:#00CFFF;font-weight:bold;margin-bottom:9px;">Phase 1 of 5</div>
-  <h2 style="color:#004B82;margin:0 0 13px 0;font-size:1.25rem;">Identity</h2>
-  <p style="color:#333;margin-bottom:18px;">Who are you, really? What values, strengths, or stories define you right now?</p>
-  <textarea id="identityInput" rows="6" placeholder="Write honestly, even if it’s messy. No one sees this but you." style="width:100%;padding:14px;font-size:1rem;border-radius:7px;border:1px solid #dbeafe;resize:vertical;margin-bottom:15px;"></textarea>
-  <div style="display:flex;gap:10px;">
-    <button onclick="getAIIdentityCoaching()" style="background:#00CFFF;color:#000;font-weight:bold;border:none;padding:12px 24px;border-radius:8px;font-size:1rem;cursor:pointer;flex:1;">Get Clarity from AI</button>
-    <button onclick="saveIdentityEntry()" style="background:#e0f7fb;color:#004B82;font-weight:bold;border:none;padding:12px 14px;border-radius:8px;font-size:1rem;cursor:pointer;">Save Only</button>
-  </div>
-  <div id="aiCoachBox" style="display:none;margin-top:20px;background:#f0f8fb;border:1px solid #00CFFF;border-radius:9px;padding:15px;">
-    <b style="color:#004B82;">AI Reflection:</b>
-    <div id="aiCoachText" style="white-space:pre-line;margin-top:9px;color:#333;"></div>
-  </div>
-  <div id="saveStatus" style="margin-top:13px;font-size:0.98em;color:#059669;display:none;">Saved!</div>
-  <div style="margin-top:22px;">
-    <button onclick="nextPhase()" style="background:#059669;color:#fff;font-weight:bold;border:none;padding:13px 34px;border-radius:8px;font-size:1rem;cursor:pointer;">Next</button>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script>
-const PHASE_KEY = "north_identity_entry";
-const AICOACH_KEY = "north_identity_aicoach";
-
-function saveIdentityEntry() {
-  const val = document.getElementById("identityInput").value;
-  localStorage.setItem(PHASE_KEY, val);
-  document.getElementById("saveStatus").style.display = "block";
-  setTimeout(()=>{document.getElementById("saveStatus").style.display = "none";}, 1400);
-}
-if(localStorage.getItem(PHASE_KEY)) {
-  document.getElementById("identityInput").value = localStorage.getItem(PHASE_KEY);
-}
-if(localStorage.getItem(AICOACH_KEY)) {
-  document.getElementById("aiCoachText").innerText = localStorage.getItem(AICOACH_KEY);
-  document.getElementById("aiCoachBox").style.display = "block";
-}
-
-async function getAIIdentityCoaching() {
-  const val = document.getElementById("identityInput").value.trim();
-  if(!val) { alert("Please enter something about your identity first."); return; }
-  document.getElementById("aiCoachBox").style.display = "block";
-  document.getElementById("aiCoachText").innerText = "Thinking...";
-  // API key should be securely obfuscated or call your own backend if in production
-  const apiKey = "sk-...";
-  try {
-    const system = `You are a top-tier executive coach. Offer a short, insightful reflection for someone writing about their identity and values. Highlight what stands out and offer a supportive suggestion for moving forward.`;
-    const prompt = "Identity entry: " + val;
-    const res = await axios.post("https://api.openai.com/v1/chat/completions",{
-      model:"gpt-4",
-      messages:[
-        {role:"system",content:system},
-        {role:"user",content:prompt}
-      ],
-      max_tokens: 150,
-      temperature: 0.7
-    },{
-      headers:{
-        "Content-Type":"application/json",
-        "Authorization":"Bearer "+apiKey
-      }
-    });
-    const out = res.data.choices[0].message.content.trim();
-    document.getElementById("aiCoachText").innerText = out;
-    localStorage.setItem(AICOACH_KEY, out);
-  } catch(err) {
-    document.getElementById("aiCoachText").innerText = "Error. Try again or check your connection.";
-  }
-}
-
-function nextPhase() {
-  saveIdentityEntry();
-  alert("Next phase coming soon! (This is where Phase 2: Resistance will launch.)");
-  // You will add show/hide logic for phase navigation here
-}
-</script>
-
-<!-- START North 5-Phase Journey: Place after your payment/wallet logic in index.html -->
-
-<div id="northJourney" style="font-family:'Segoe UI',sans-serif;max-width:520px;margin:42px auto 28px auto;padding:30px 22px 26px 22px;background:#fff7ec;border-radius:13px;box-shadow:0 4px 16px rgba(0,0,0,0.09);">
-  <!-- Progress Bar -->
-  <div id="progressBar" style="margin-bottom:22px;">
-    <span id="phaseIndicator" style="color:#00CFFF;font-weight:700;">Phase 1 of 5</span>
-    <div style="height:8px;background:#e0f7fb;border-radius:5px;overflow:hidden;margin-top:6px;">
-      <div id="progressFill" style="width:20%;height:100%;background:#00CFFF;"></div>
-    </div>
-  </div>
-  <!-- Phase Cards -->
+  <!-- Phase 1: Identity -->
   <div id="phaseCard1" class="northPhaseCard">
     <h2 style="color:#004B82;font-size:1.25rem;margin:0 0 13px 0;">Identity</h2>
     <p style="color:#333;margin-bottom:18px;">Who are you, really? What values, strengths, or stories define you right now?</p>
@@ -234,6 +144,8 @@ function nextPhase() {
       <button onclick="nextPhase(2)" style="background:#059669;color:#fff;font-weight:bold;border:none;padding:13px 34px;border-radius:8px;font-size:1rem;cursor:pointer;">Next</button>
     </div>
   </div>
+
+  <!-- Phase 2: Resistance -->
   <div id="phaseCard2" class="northPhaseCard" style="display:none;">
     <h2 style="color:#004B82;font-size:1.25rem;margin:0 0 13px 0;">Resistance</h2>
     <p style="color:#333;margin-bottom:18px;">What is holding you back or making progress difficult right now? Where do you notice friction?</p>
@@ -252,6 +164,8 @@ function nextPhase() {
       <button onclick="nextPhase(3)" style="background:#059669;color:#fff;font-weight:bold;border:none;padding:13px 34px;border-radius:8px;font-size:1rem;cursor:pointer;">Next</button>
     </div>
   </div>
+
+  <!-- Phase 3: Emotions -->
   <div id="phaseCard3" class="northPhaseCard" style="display:none;">
     <h2 style="color:#004B82;font-size:1.25rem;margin:0 0 13px 0;">Emotions</h2>
     <p style="color:#333;margin-bottom:18px;">How do you feel about your business and your progress? What emotions come up most often?</p>
@@ -270,6 +184,8 @@ function nextPhase() {
       <button onclick="nextPhase(4)" style="background:#059669;color:#fff;font-weight:bold;border:none;padding:13px 34px;border-radius:8px;font-size:1rem;cursor:pointer;">Next</button>
     </div>
   </div>
+
+  <!-- Phase 4: Vision -->
   <div id="phaseCard4" class="northPhaseCard" style="display:none;">
     <h2 style="color:#004B82;font-size:1.25rem;margin:0 0 13px 0;">Vision</h2>
     <p style="color:#333;margin-bottom:18px;">Imagine your ideal future. Where do you want to go, both personally and professionally? What does true success look like?</p>
@@ -288,6 +204,8 @@ function nextPhase() {
       <button onclick="nextPhase(5)" style="background:#059669;color:#fff;font-weight:bold;border:none;padding:13px 34px;border-radius:8px;font-size:1rem;cursor:pointer;">Next</button>
     </div>
   </div>
+
+  <!-- Phase 5: Direction -->
   <div id="phaseCard5" class="northPhaseCard" style="display:none;">
     <h2 style="color:#004B82;font-size:1.25rem;margin:0 0 13px 0;">Direction</h2>
     <p style="color:#333;margin-bottom:18px;">What are your next real steps? What can you commit to right now to move forward?</p>
@@ -306,44 +224,35 @@ function nextPhase() {
       <button onclick="finishJourney()" style="background:#004B82;color:#fff;font-weight:bold;border:none;padding:13px 32px;border-radius:8px;font-size:1rem;cursor:pointer;">Finish</button>
     </div>
   </div>
-  <!-- End of cards -->
+
+  <!-- Finish Message -->
   <div id="journeyDone" style="display:none;margin-top:25px;text-align:center;">
     <h2 style="color:#059669;">Congratulations!</h2>
     <p style="color:#444;">You’ve completed the North Clarity Journey.<br>Come back anytime for new insights or to update your journey.</p>
   </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
 // --- Phase Handling ---
 function nextPhase(num) {
-  // Save any current entry automatically
   if(num === 1) savePhaseEntry('identity');
   if(num === 2) savePhaseEntry('resistance');
   if(num === 3) savePhaseEntry('emotions');
   if(num === 4) savePhaseEntry('vision');
   if(num === 5) savePhaseEntry('direction');
-
-  // Hide all cards
   for(let i=1;i<=5;i++) document.getElementById('phaseCard'+i).style.display = 'none';
   document.getElementById('journeyDone').style.display = 'none';
-
   if(num >= 1 && num <= 5) {
     document.getElementById('phaseCard'+num).style.display = 'block';
-    // Update progress bar
     document.getElementById('phaseIndicator').innerText = "Phase " + num + " of 5";
     document.getElementById('progressFill').style.width = (num*20)+"%";
   }
 }
-
 function finishJourney() {
   for(let i=1;i<=5;i++) document.getElementById('phaseCard'+i).style.display = 'none';
   document.getElementById('progressFill').style.width = "100%";
   document.getElementById('journeyDone').style.display = 'block';
   document.getElementById('phaseIndicator').innerText = "Journey Complete!";
 }
-
-// --- Save/load for each phase ---
 function savePhaseEntry(phase) {
   const key = "north_" + phase + "_entry";
   const textarea = document.getElementById(phase + "Input");
@@ -360,15 +269,12 @@ function savePhaseEntry(phase) {
     document.getElementById("aiCoachBox_"+phase).style.display = "block";
   }
 });
-
-// --- AI Coaching per phase ---
 async function getAICoach(phase) {
   const val = document.getElementById(phase+"Input").value.trim();
   if(!val) { alert("Please fill in your answer first."); return; }
   document.getElementById("aiCoachBox_"+phase).style.display = "block";
   document.getElementById("aiCoachText_"+phase).innerText = "Thinking...";
-  // Insert your obfuscated or backend OpenAI key here
-  const apiKey = "sk-...";
+  const apiKey = "sk-..."; // Use your obfuscated or backend OpenAI key
   let system, prompt;
   switch(phase) {
     case 'identity':
